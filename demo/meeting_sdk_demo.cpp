@@ -35,7 +35,7 @@
 
 //used for event listener
 #include "MeetingParticipantsCtrlEventListener.h"
-#include "MeetingRecordingCtrlEventListener.h"
+//#include "MeetingRecordingCtrlEventListener.h"
 
 //references for GetVideoRawData
 #include "ZoomSDKRenderer.h"
@@ -550,7 +550,7 @@ void JoinMeeting()
 
 	// Set the event listener for recording privilege status
 	m_pRecordController = m_pMeetingService->GetMeetingRecordingController();
-	m_pRecordController->SetEvent(new MeetingRecordingCtrlEventListener(&onIsGivenRecordingPermission));
+//	m_pRecordController->SetEvent(new MeetingRecordingCtrlEventListener(&onIsGivenRecordingPermission));
 
 
 	// set event listnener for prompt handler 
@@ -839,12 +839,15 @@ int main(int argc, char* argv[])
 	AuthMeetingSDK();
 	initAppSettings();
 
-
+	// TODO: 上手く動作したので、次はコードを読んでMTGを退室したり、映像を送信したりするコードを調査する
+	// TODO: 標準入力から特定の操作ができるようになると便利そう
 
 	loop = g_main_loop_new(NULL, FALSE);
 	// add source to default context
 	g_timeout_add(1000, timeout_callback, loop);
+
 	g_main_loop_run(loop);
+
 	return 0;
 }
 
