@@ -1,0 +1,10 @@
+﻿version: '3'
+services:
+  app:
+    build: .
+    container_name: zoom-sdk-app
+    volumes:
+      - ./demo:/app/demo
+    working_dir: /app/demo
+    stdin_open: true
+    tty: true
