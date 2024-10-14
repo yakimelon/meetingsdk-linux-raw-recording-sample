@@ -59,10 +59,10 @@ USING_ZOOM_SDK_NAMESPACE
 
 
 //references for SendAudioRawData
-std::string DEFAULT_AUDIO_SOURCE = "yourwavefile.wav";
+std::string DEFAULT_AUDIO_SOURCE = "/yourwavefile.wav";
 
 //references for SendVideoRawData
-std::string DEFAULT_VIDEO_SOURCE = "yourmp4file.mp4";
+std::string DEFAULT_VIDEO_SOURCE = "/yourmp4file.mp4";
 
 
 GMainLoop* loop;
@@ -177,48 +177,38 @@ void CheckAndStartRawRecording(bool isVideo, bool isAudio) {
 }
 
 //check if you meet the requirements to send raw data
-void CheckAndStartRawSending(bool isVideo, bool isAudio) {
-
-
+void CheckAndStartRawSending() {
 	//SendVideoRawData
-	if (isVideo) {
-
-		ZoomSDKVideoSource* virtual_camera_video_source = new ZoomSDKVideoSource(DEFAULT_VIDEO_SOURCE);
-		IZoomSDKVideoSourceHelper* p_videoSourceHelper = GetRawdataVideoSourceHelper();
-
-		if (p_videoSourceHelper) {
-			SDKError err = p_videoSourceHelper->setExternalVideoSource(virtual_camera_video_source);
-
-
-
-			if (err != SDKERR_SUCCESS) {
-				printf("attemptToStartRawVideoSending(): Failed to set external video source, error code: %d\n", err);
-			}
-			else {
-				printf("attemptToStartRawVideoSending(): Success \n");
-				IMeetingVideoController* meetingController = m_pMeetingService->GetMeetingVideoController();
-				meetingController->UnmuteVideo();
-
-			}
+	ZoomSDKVideoSource* virtual_camera_video_source = new ZoomSDKVideoSource(DEFAULT_VIDEO_SOURCE);
+	IZoomSDKVideoSourceHelper* p_videoSourceHelper = GetRawdataVideoSourceHelper();
+	if (p_videoSourceHelper) {
+		SDKError err = p_videoSourceHelper->setExternalVideoSource(virtual_camera_video_source);
+		if (err != SDKERR_SUCCESS) {
+			// TODO: ここでエラーが確認出来る
+			printf("attemptToStartRawVideoSending(): Failed to set external video source, error code: %d\n", err);
+		} else {
+			printf("attemptToStartRawVideoSending(): Success \n");
+			IMeetingVideoController* meetingController = m_pMeetingService->GetMeetingVideoController();
+			meetingController->UnmuteVideo();
 		}
-		else {
-			printf("attemptToStartRawVideoSending(): Failed to get video source helper\n");
-		}
+	} else {
+		printf("attemptToStartRawVideoSending(): Failed to get video source helper\n");
 	}
-
 
 	//SendAudioRawData
-	if (isAudio) {
-		ZoomSDKVirtualAudioMicEvent* audio_source = new ZoomSDKVirtualAudioMicEvent(DEFAULT_AUDIO_SOURCE);
-		IZoomSDKAudioRawDataHelper* audioHelper = GetAudioRawdataHelper();
-		if (audioHelper) {
-			SDKError err = audioHelper->setExternalAudioSource(audio_source);
+	ZoomSDKVirtualAudioMicEvent* audio_source = new ZoomSDKVirtualAudioMicEvent(DEFAULT_AUDIO_SOURCE);
+	IZoomSDKAudioRawDataHelper* audioHelper = GetAudioRawdataHelper();
+	if (audioHelper) {
+		SDKError err = audioHelper->setExternalAudioSource(audio_source);
+		if (err != SDKERR_SUCCESS) {
+			printf("attemptToStartRawAudioSending(): Failed to set external audio source, error code: %d\n", err);
+		} else {
+			printf("attemptToStartRawAudioSending(): Success \n");
 		}
+	} else {
+		printf("attemptToStartRawAudioSending(): Failed to get audio source helper\n");
 	}
-
-
 }
-
 
 
 //callback when given host permission
@@ -283,7 +273,7 @@ void onInMeeting() {
 
 	//first attempt to start raw recording  / sending, upon successfully joined and achieved "in-meeting" state.
 	CheckAndStartRawRecording(GetVideoRawData, GetAudioRawData);
-	CheckAndStartRawSending(SendVideoRawData, SendAudioRawData);
+	CheckAndStartRawSending();
 
 }
 
@@ -566,7 +556,7 @@ void JoinMeeting()
 	// withoutloginParam.meetingNumber = 1231231234;
 	withoutloginParam.meetingNumber = std::stoull(meeting_number);
 	withoutloginParam.vanityID = NULL;
-	withoutloginParam.userName = "LinuxChun";
+	withoutloginParam.userName = "影分身";
 	// withoutloginParam.psw = "1";
 	withoutloginParam.psw = meeting_password.c_str();
 	withoutloginParam.customer_key = NULL;
@@ -833,8 +823,14 @@ gboolean stdin_callback(GIOChannel *source, GIOCondition condition, gpointer dat
 		if (is(input, "leave")) {
 			LeaveMeeting();
 		}
+		if (is(input, "exit")) {
+			LeaveMeeting();
+			CleanSDK();
+			std::exit(0);
+		}
 		if (is(input, "send")) {
 			turnOnSendVideoAndAudio();
+			CheckAndStartRawSending();
 		}
 		g_free(input);
 	}
