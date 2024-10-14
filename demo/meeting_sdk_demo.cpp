@@ -599,10 +599,8 @@ void JoinMeeting()
 			pAudioContext->EnableAutoJoinAudio(true);
 		}
 	}
-	if (SendVideoRawData) {
 
-		//ensure video is turned on
-		withoutloginParam.isVideoOff = false;
+	if (SendVideoRawData) {
 		//set join video to true
 		ZOOM_SDK_NAMESPACE::IVideoSettingContext* pVideoContext = m_pSettingService->GetVideoSettings();
 		if (pVideoContext)
@@ -610,8 +608,8 @@ void JoinMeeting()
 			pVideoContext->EnableAutoTurnOffVideoWhenJoinMeeting(false);
 		}
 	}
-	if (SendAudioRawData) {
 
+	if (SendAudioRawData) {
 		ZOOM_SDK_NAMESPACE::IAudioSettingContext* pAudioContext = m_pSettingService->GetAudioSettings();
 		if (pAudioContext)
 		{
@@ -619,30 +617,27 @@ void JoinMeeting()
 			pAudioContext->EnableAutoJoinAudio(true);
 			pAudioContext->EnableAlwaysMuteMicWhenJoinVoip(true);
 			pAudioContext->SetSuppressBackgroundNoiseLevel(Suppress_BGNoise_Level_None);
-
 		}
 	}
 
+	//attempt to join meeting
+	if (m_pMeetingService)
+	{
+		err = m_pMeetingService->Join(joinParam);
+	}
+	else
+	{
+		std::cout << "join_meeting m_pMeetingService:Null" << std::endl;
+	}
 
-		//attempt to join meeting
-		if (m_pMeetingService)
-		{
-			err = m_pMeetingService->Join(joinParam);
-		}
-		else
-		{
-			std::cout << "join_meeting m_pMeetingService:Null" << std::endl;
-		}
-
-		if (ZOOM_SDK_NAMESPACE::SDKERR_SUCCESS == err)
-		{
-			std::cout << "join_meeting:success" << std::endl;
-		}
-		else
-		{
-			std::cout << "join_meeting:error" << std::endl;
-		}
-	
+	if (ZOOM_SDK_NAMESPACE::SDKERR_SUCCESS == err)
+	{
+		std::cout << "join_meeting:success" << std::endl;
+	}
+	else
+	{
+		std::cout << "join_meeting:error" << std::endl;
+	}
 }
 
 void LeaveMeeting()
@@ -797,12 +792,6 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* use
 	return totalSize;
 }
 
-
-gboolean timeout_callback(gpointer data)
-{
-	return TRUE;
-}
-
 //this catches a break signal, such as Ctrl + C
 void my_handler(int s)
 {
@@ -810,12 +799,8 @@ void my_handler(int s)
 	LeaveMeeting();
 	printf("Leaving session.\n");
 	CleanSDK();
-
-	
-
 	//InitMeetingSDK();
 	//AuthMeetingSDK();
-
 	std::exit(0);
 }
 
@@ -828,25 +813,57 @@ void initAppSettings()
 	sigaction(SIGINT, &sigIntHandler, NULL);
 }
 
-int main(int argc, char* argv[])
+gboolean timeout_callback(gpointer data)
 {
+	return TRUE;
+}
 
+bool is(gchar* input, const std::string& s) {
+	return g_strcmp0(input, (s + "\n").c_str()) == 0;
+}
+
+gboolean stdin_callback(GIOChannel *source, GIOCondition condition, gpointer data) {
+	gchar *input = NULL;
+	gsize len = 0;
+
+	// 標準入力からのデータを読み取る
+	if (g_io_channel_read_line(source, &input, &len, NULL, NULL) == G_IO_STATUS_NORMAL) {
+        if (is(input, "join")) {
+	    	JoinMeeting();
+        }
+        if (is(input, "leave")) {
+        	LeaveMeeting();
+		}
+        if (is(input, "send")) {
+        	turnOnSendVideoAndAudio();
+        }
+		g_free(input);
+	}
+	return TRUE;  // TRUEを返すと再度監視
+}
+
+void SdkSetup() {
 	ReadTEXTSettings();
-
-	
-
 	InitMeetingSDK();
 	AuthMeetingSDK();
 	initAppSettings();
+}
 
-	// TODO: 上手く動作したので、次はコードを読んでMTGを退室したり、映像を送信したりするコードを調査する
-	// TODO: 標準入力から特定の操作ができるようになると便利そう
+int main(int argc, char* argv[])
+{
+  	SdkSetup();
 
 	loop = g_main_loop_new(NULL, FALSE);
-	// add source to default context
 	g_timeout_add(1000, timeout_callback, loop);
 
+	// 標準入力（stdin）を監視
+	GIOChannel *stdin_channel = g_io_channel_unix_new(fileno(stdin));
+	g_io_add_watch(stdin_channel, G_IO_IN, (GIOFunc)stdin_callback, NULL);
 	g_main_loop_run(loop);
+
+	// クリーンアップ
+	g_io_channel_unref(stdin_channel);
+	g_main_loop_unref(loop);
 
 	return 0;
 }
