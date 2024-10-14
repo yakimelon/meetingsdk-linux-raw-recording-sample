@@ -25,3 +25,5 @@ git rm --cached config.json
 .idea
 
 /demo/config.txt
+
+/demo/cmake-build-debug
