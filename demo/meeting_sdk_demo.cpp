@@ -605,6 +605,7 @@ void JoinMeeting()
 		ZOOM_SDK_NAMESPACE::IVideoSettingContext* pVideoContext = m_pSettingService->GetVideoSettings();
 		if (pVideoContext)
 		{
+			// TODO: ビデオの設定を行う
 			pVideoContext->EnableAutoTurnOffVideoWhenJoinMeeting(false);
 		}
 	}
@@ -758,14 +759,12 @@ void InitMeetingSDK()
 
 void StartMeeting()
 {
-
 	ZOOM_SDK_NAMESPACE::StartParam startParam;
 	startParam.userType = ZOOM_SDK_NAMESPACE::SDK_UT_NORMALUSER;
 	startParam.param.normaluserStart.vanityID = NULL;
 	startParam.param.normaluserStart.customer_key = NULL;
 	startParam.param.normaluserStart.isVideoOff = false;
 	startParam.param.normaluserStart.isAudioOff = false;
-
 
 	ZOOM_SDK_NAMESPACE::SDKError err = m_pMeetingService->Start(startParam);
 	if (SDKError::SDKERR_SUCCESS == err)
@@ -828,15 +827,15 @@ gboolean stdin_callback(GIOChannel *source, GIOCondition condition, gpointer dat
 
 	// 標準入力からのデータを読み取る
 	if (g_io_channel_read_line(source, &input, &len, NULL, NULL) == G_IO_STATUS_NORMAL) {
-        if (is(input, "join")) {
-	    	JoinMeeting();
-        }
-        if (is(input, "leave")) {
-        	LeaveMeeting();
+		if (is(input, "join")) {
+			JoinMeeting();
 		}
-        if (is(input, "send")) {
-        	turnOnSendVideoAndAudio();
-        }
+		if (is(input, "leave")) {
+			LeaveMeeting();
+		}
+		if (is(input, "send")) {
+			turnOnSendVideoAndAudio();
+		}
 		g_free(input);
 	}
 	return TRUE;  // TRUEを返すと再度監視
@@ -851,7 +850,7 @@ void SdkSetup() {
 
 int main(int argc, char* argv[])
 {
-  	SdkSetup();
+	SdkSetup();
 
 	loop = g_main_loop_new(NULL, FALSE);
 	g_timeout_add(1000, timeout_callback, loop);
@@ -867,4 +866,3 @@ int main(int argc, char* argv[])
 
 	return 0;
 }
-
