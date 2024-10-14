@@ -23,6 +23,7 @@ git rm --cached config.json
 
 
 .idea
+.vscode
 
 /demo/config.txt
 
