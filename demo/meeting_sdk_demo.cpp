@@ -184,7 +184,6 @@ void CheckAndStartRawSending() {
 	if (p_videoSourceHelper) {
 		SDKError err = p_videoSourceHelper->setExternalVideoSource(virtual_camera_video_source);
 		if (err != SDKERR_SUCCESS) {
-			// TODO: ここでエラーが確認出来る
 			printf("attemptToStartRawVideoSending(): Failed to set external video source, error code: %d\n", err);
 		} else {
 			printf("attemptToStartRawVideoSending(): Success \n");
