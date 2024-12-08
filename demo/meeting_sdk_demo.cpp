@@ -832,7 +832,6 @@ gboolean stdin_callback(GIOChannel *source, GIOCondition condition, gpointer dat
 		}
 		if (is(input, "send")) {
 			turnOnSendVideoAndAudio();
-			CheckAndStartRawSending();
 		}
 		g_free(input);
 	}
