@@ -59,10 +59,10 @@ USING_ZOOM_SDK_NAMESPACE
 
 
 //references for SendAudioRawData
-std::string DEFAULT_AUDIO_SOURCE = "/yourwavefile.wav";
+std::string DEFAULT_AUDIO_SOURCE = "./yourwavefile.wav";
 
 //references for SendVideoRawData
-std::string DEFAULT_VIDEO_SOURCE = "/yourmp4file.mp4";
+std::string DEFAULT_VIDEO_SOURCE = "./yourmp4file.mp4";
 
 
 GMainLoop* loop;
