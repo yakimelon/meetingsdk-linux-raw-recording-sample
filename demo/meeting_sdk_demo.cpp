@@ -595,8 +595,8 @@ void JoinMeeting()
 		ZOOM_SDK_NAMESPACE::IVideoSettingContext* pVideoContext = m_pSettingService->GetVideoSettings();
 		if (pVideoContext)
 		{
-			// TODO: ビデオの設定を行う
-			pVideoContext->EnableAutoTurnOffVideoWhenJoinMeeting(false);
+			// 会議に参加するときにビデオをオフにするかどうかを有効または無効にします。
+			pVideoContext->EnableAutoTurnOffVideoWhenJoinMeeting(true);
 		}
 	}
 
@@ -604,9 +604,11 @@ void JoinMeeting()
 		ZOOM_SDK_NAMESPACE::IAudioSettingContext* pAudioContext = m_pSettingService->GetAudioSettings();
 		if (pAudioContext)
 		{
-			//ensure auto join audio
+			// 会議に参加するときにオーディオを自動的に有効または無効にします。
 			pAudioContext->EnableAutoJoinAudio(true);
+			// ボイスに参加する際に常にマイクをミュートする
 			pAudioContext->EnableAlwaysMuteMicWhenJoinVoip(true);
+			// ノイズ抑制を行わない設定
 			pAudioContext->SetSuppressBackgroundNoiseLevel(Suppress_BGNoise_Level_None);
 		}
 	}
