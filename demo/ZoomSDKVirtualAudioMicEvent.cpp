@@ -41,6 +41,7 @@ void PlayAudioFileToVirtualMic(IZoomSDKAudioRawDataSender* audio_sender, string 
 		file.read(buffer.data(), file_size);
 
 		// Send the audio data to the virtual camera
+		printf("buffer.size(): %ld\n", buffer.size());
 		SDKError err = audio_sender->send(buffer.data(), buffer.size(), 44100);
 		if (err != SDKERR_SUCCESS) {
 			std::cout << "Error: Failed to send audio data to virtual mic. Error code: " << err << std::endl;
@@ -57,20 +58,21 @@ void PlayAudioFileToVirtualMic(IZoomSDKAudioRawDataSender* audio_sender, string 
 /// \brief Callback for virtual audio mic to do some initialization.
 /// \param pSender, You can send audio data based on this object, see \link IZoomSDKAudioRawDataSender \endlink.
 void ZoomSDKVirtualAudioMicEvent::onMicInitialize(IZoomSDKAudioRawDataSender* pSender) {
-	//pSender->send();	pSender_ = pSender;
-	printf("ZoomSDKVirtualAudioMicEvent OnMicInitialize, waiting for turnOn chat command\n");
+	printf("pSender_: %p\n", pSender_);
+	printf("ZoomSDKVirtualAudioMicEvent OnMicInitialize, waiting for turnOn chat command2\n");
 }
 
 /// \brief Callback for virtual audio mic can send raw data with 'pSender'.
 void ZoomSDKVirtualAudioMicEvent::onMicStartSend() {
-
 	printf("onMicStartSend\n");
 	std::cout << "onStartSend" << std::endl;
+	printf("audio_play_flag: %d\n", audio_play_flag);
+	printf("pSender_: %p\n", pSender_);
 	if (pSender_ && audio_play_flag != 1) {
+		printf("音声送信処理中\n");
 		while (audio_play_flag > -1) {}
 		audio_play_flag = 1;
 		thread(PlayAudioFileToVirtualMic, pSender_, audio_source_).detach();
-
 	}
 }
 
