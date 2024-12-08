@@ -5,6 +5,12 @@ services:
     container_name: zoom-sdk-app
     volumes:
       - ./demo:/app/demo
+      - /mnt/wslg:/mnt/wslg  # PulseAudioソケットの共有
+    environment:
+      - PULSE_SERVER=unix:/mnt/wslg/PulseServer  # PulseAudioサーバー指定
+      - XDG_RUNTIME_DIR=/run/user/1000           # ランタイムディレクトリ
+      - USER_UID=1000  # ホストユーザーUID
+      - USER_GID=1000  # ホストユーザーGID
     working_dir: /app/demo
     stdin_open: true
     tty: true

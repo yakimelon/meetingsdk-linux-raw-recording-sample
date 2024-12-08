@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends --no-install-su
     pkg-config \
     libegl-mesa0 \
     libsdl2-dev \
-    g++-multilib 
+    g++-multilib
 
 # Install CURL related libs
 RUN apt-get install -y libcurl4-openssl-dev
@@ -38,9 +38,14 @@ RUN apt-get install -y libcurl4-openssl-dev
 RUN apt-get install -y libasound2 libasound2-plugins alsa alsa-utils alsa-oss
 
 # Install Pulseaudio
-RUN apt-get install -y  pulseaudio pulseaudio-utils
+RUN apt-get install -y  pulseaudio pulseaudio-utils libpulse0
 
+RUN apt-get upgrade -y
 
+RUN apt-get install -f
+RUN apt-get update --fix-missing
+
+RUN apt-get install gdb -y
 
 # Set the working directory
 WORKDIR /app
@@ -55,7 +60,25 @@ COPY demo/ /app/demo/
 WORKDIR /app/demo
 
 # Make the run script executable
-#RUN chmod +x /app/demo/setup-pulseaudio.sh
+RUN chmod +x /app/demo/setup-pulseaudio.sh
+
+# Ensure PulseAudio runtime directory exists
+RUN mkdir -p /run/user/1000 && chmod 700 /run/user/1000
+
+# Set runtime environment
+ARG USER_UID=1000
+ARG USER_GID=1000
+
+# Create user and runtime directory
+RUN groupadd -g ${USER_GID} pulseuser && \
+    useradd -m -u ${USER_UID} -g ${USER_GID} -s /bin/bash pulseuser && \
+    mkdir -p /run/user/${USER_UID} && \
+    chown ${USER_UID}:${USER_GID} /run/user/${USER_UID} && \
+    chmod 700 /run/user/${USER_UID}
+
+
+ENV XDG_RUNTIME_DIR=/run/user/1000
+USER pulseuser
 
 # Set the working directory to the binary folder
 WORKDIR /app/demo/bin
