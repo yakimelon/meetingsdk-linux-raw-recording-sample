@@ -1,6 +1,8 @@
 # Use the official Ubuntu image as the base image
 FROM ubuntu:22.04
 
+RUN echo "root:admin" | chpasswd
+
 # Install necessary dependencies
 RUN apt-get update && \
     apt-get install -y build-essential cmake
@@ -46,6 +48,11 @@ RUN apt-get install -f
 RUN apt-get update --fix-missing
 
 RUN apt-get install gdb -y
+
+# TODO: Dockerだと apt install -y libopencv-dev のインストールで完了しなくなってしまうので、手動でインストールを行う
+# RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
+#    apt-get install -y libopencv-dev && \
+#    apt-get clean && rm -rf /var/lib/apt/lists/* \
 
 # Set the working directory
 WORKDIR /app

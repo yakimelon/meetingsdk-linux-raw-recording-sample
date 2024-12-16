@@ -78,3 +78,7 @@ execute_process(COMMAND ln -s libmeetingsdk.so libmeetingsdk.so.1
 configure_file(${CMAKE_SOURCE_DIR}/config.txt ${CMAKE_SOURCE_DIR}/bin/config.txt COPYONLY)
 
 file(COPY ${CMAKE_SOURCE_DIR}/lib/zoom_meeting_sdk/ DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
+target_link_libraries(meetingSDKDemo ${OpenCV_LIBS})
