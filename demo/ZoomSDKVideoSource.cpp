@@ -7,83 +7,56 @@
 #include <string>
 #include <cstdio>
 #include <chrono>
+#include <gst/gst.h>
+#include <gst/app/gstappsink.h>
 
-#include <opencv2/opencv.hpp>
-#include <opencv2/core.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
-
-using namespace cv;
 using namespace std;
 
 int video_play_flag = -1;
 int width = WIDTH;
 int height = HEIGHT;
 
-void PlayVideoFileToVirtualCamera(IZoomSDKVideoSender* video_sender, const std::string& video_source)
+void PlayVideoFileToVirtualCamera(GstElement* video_sink, IZoomSDKVideoSender* video_sender)
 {
-    char* frameBuffer;
-    int frameLen = height / 2 * 3 * width;
-    frameBuffer = (char*)malloc(frameLen);
+	// フレームサイズを計算（I420 フォーマットの場合）
+	const int frameLen = height / 2 * 3 * width;
+	char* frameBuffer = (char*)malloc(frameLen);
 
-    const int fps = 30;
-    const std::chrono::microseconds frameDuration(1000000 / fps); // 1 second = 1,000,000 microseconds
+	if (!frameBuffer) {
+		std::cerr << "Failed to allocate video frame buffer" << std::endl;
+		return;
+	}
 
-    // execute in a thread.
-    while (video_play_flag > 0 && video_sender) {
-        Mat frame;
-        VideoCapture cap;
-        cap.open(video_source);
-        if (!cap.isOpened()) {
-            cerr << "ERROR! Unable to open camera\n";
-            video_play_flag = 0;
-            break;
-        }
-        else {
-            //--- GRAB AND WRITE LOOP
-            std::cout << "Start grabbing" << endl;
-            while (video_play_flag > 0)
-            {
+	GstSample* video_sample = nullptr;
 
-                auto start = std::chrono::high_resolution_clock::now();
+	// 映像フレームのループ処理
+	while (video_play_flag > 0 && video_sender) {
+		// appsink から映像サンプルを取得
+		video_sample = gst_app_sink_try_pull_sample(GST_APP_SINK(video_sink), GST_SECOND / 30);
+		if (video_sample) {
+			// サンプルからバッファを取得
+			GstBuffer* video_buffer = gst_sample_get_buffer(video_sample);
+			GstMapInfo video_map;
 
-                // wait for a new frame from camera and store it into 'frame'
-                cap.read(frame);
-                // check if we succeeded
-                if (frame.empty()) {
-                    cerr << "ERROR! blank frame grabbed\n";
-                    break;
-                }
-                Mat resizedFrame;
-                resize(frame, resizedFrame, Size(width, height), 0, 0, INTER_LINEAR);
+			// バッファをマップしてフレームデータを取得
+			if (gst_buffer_map(video_buffer, &video_map, GST_MAP_READ)) {
+				memcpy(frameBuffer, video_map.data, frameLen);
 
-                //covert Mat to YUV buffer
-                Mat yuv;
-                cv::cvtColor(resizedFrame, yuv, COLOR_BGRA2YUV_I420);
-                char* p;
-                for (int i = 0; i < height / 2 * 3; ++i) {
-                    p = yuv.ptr<char>(i);
-                    for (int j = 0; j < width; ++j) {
-                        frameBuffer[i * width + j] = p[j];
-                    }
-                }
-                SDKError err = ((IZoomSDKVideoSender*)video_sender)->sendVideoFrame(frameBuffer, width, height, frameLen, 0);
-                if (err != SDKERR_SUCCESS) {
-                    std::cout << "sendVideoFrame failed: Error " << err << endl;
-                }
+				// Zoom SDK に映像フレームを送信
+				SDKError video_err = video_sender->sendVideoFrame(frameBuffer, width, height, frameLen, 0);
+				if (video_err != SDKERR_SUCCESS) {
+					std::cerr << "Failed to send video frame: " << video_err << std::endl;
+				}
+				gst_buffer_unmap(video_buffer, &video_map);
+			}
 
-                auto end = std::chrono::high_resolution_clock::now();
-                auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+			gst_sample_unref(video_sample);
+		}
+	}
 
-                if (elapsed < frameDuration) {
-                    std::this_thread::sleep_for(frameDuration - elapsed);
-                    std::cout << "frame sleep " << endl;
-                }
-            }
-            cap.release();
-        }
-    }
-    video_play_flag = -1;
+	// フレームバッファの解放
+	free(frameBuffer);
+	video_play_flag = -1;
 }
 
 void ZoomSDKVideoSource::onInitialize(IZoomSDKVideoSender* sender, IList<VideoSourceCapability>* support_cap_list, VideoSourceCapability& suggest_cap)
@@ -102,17 +75,18 @@ void ZoomSDKVideoSource::onPropertyChange(IList<VideoSourceCapability>* support_
     std::cout << "calculated frameLen: " << height / 2 * 3 * width << endl;
 }
 
+// SDKの仕様でカメラを Unmute すると onStartSend が呼ばれる
 void ZoomSDKVideoSource::onStartSend()
 {
     std::cout << "onVideoStartSend" << endl;
-    // TODO: ここが実行されているか確認したい
     printf("video_play_flag: %d\n", video_play_flag);
     printf("video_sender_: %p\n", video_sender_);
     if (video_sender_ && video_play_flag != 1) {
-        printf("映像送信処理中\n");
+        printf("映像送信処理前 #1\n");
         while (video_play_flag > -1) {}
+		printf("映像送信処理前 #2\n");
         video_play_flag = 1;
-        thread(PlayVideoFileToVirtualCamera, video_sender_, video_source_).detach();
+        thread(PlayVideoFileToVirtualCamera, video_sink_, video_sender_).detach();
     }
     else {
         std::cout << "video_sender_ is null" << endl;
@@ -131,8 +105,8 @@ void ZoomSDKVideoSource::onUninitialized()
     video_sender_ = nullptr;
 }
 
-ZoomSDKVideoSource::ZoomSDKVideoSource(string video_source)
+ZoomSDKVideoSource::ZoomSDKVideoSource(GstElement* video_sink)
 {
-    video_source_ = video_source;
+	video_sink_ = video_sink;
 }
 

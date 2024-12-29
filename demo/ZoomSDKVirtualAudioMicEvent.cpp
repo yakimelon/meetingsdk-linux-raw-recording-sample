@@ -5,6 +5,8 @@
 #include <cstring>
 #include <cstdio>
 #include <vector>
+#include <gst/gst.h>
+#include <gst/app/gstappsink.h>
 
 #include "rawdata/rawdata_audio_helper_interface.h"
 #include "ZoomSDKVirtualAudioMicEvent.h"
@@ -20,38 +22,31 @@ int audio_play_flag = -1;
 
 
 
-void PlayAudioFileToVirtualMic(IZoomSDKAudioRawDataSender* audio_sender, string audio_source)
+void PlayAudioFileToVirtualMic(GstElement* audio_sink, IZoomSDKAudioRawDataSender* audio_sender)
 {
-	// execute in a thread.
+	GstSample* audio_sample = nullptr;
+
+	// 音声フレームのループ処理
 	while (audio_play_flag > 0 && audio_sender) {
+		// appsink から音声サンプルを取得
+		audio_sample = gst_app_sink_try_pull_sample(GST_APP_SINK(audio_sink), GST_SECOND / 100);
+		if (audio_sample) {
+			// サンプルからバッファを取得
+			GstBuffer* audio_buffer = gst_sample_get_buffer(audio_sample);
+			GstMapInfo audio_map;
 
-		// Check if the file exists
-		ifstream file(audio_source, ios::binary | ios::ate);
-		if (!file.is_open()) {
-			std::cout << "Error: File not found. Tried to open " << audio_source << std::endl;
-			return;
+			// バッファをマップして音声データを取得
+			if (gst_buffer_map(audio_buffer, &audio_map, GST_MAP_READ)) {
+				// Zoom SDK に音声データを送信
+				SDKError audio_err = audio_sender->send(reinterpret_cast<char*>(audio_map.data), audio_map.size, 44100);
+				if (audio_err != SDKERR_SUCCESS) {
+					std::cerr << "Failed to send audio data: " << audio_err << std::endl;
+				}
+				gst_buffer_unmap(audio_buffer, &audio_map);
+			}
+
+			gst_sample_unref(audio_sample);
 		}
-
-		// Get the file size
-		int file_size = file.tellg();
-
-		// Read the file into a buffer
-		vector<char> buffer(file_size);
-		file.seekg(0, ios::beg);
-		file.read(buffer.data(), file_size);
-
-		// Send the audio data to the virtual camera
-		printf("buffer.size(): %ld\n", buffer.size());
-		SDKError err = audio_sender->send(buffer.data(), buffer.size(), 44100);
-		if (err != SDKERR_SUCCESS) {
-			std::cout << "Error: Failed to send audio data to virtual mic. Error code: " << err << std::endl;
-			return;
-		}
-		file.close();
-		// Sleep for a while before replaying (adjust the delay as needed)
-		std::this_thread::sleep_for(std::chrono::milliseconds(10000)); // 10 second delay, this is a 10 second long wave file
-
-		//audio_play_flag = -1;
 	}
 }
 
@@ -70,10 +65,11 @@ void ZoomSDKVirtualAudioMicEvent::onMicStartSend() {
 	printf("audio_play_flag: %d\n", audio_play_flag);
 	printf("pSender_: %p\n", pSender_);
 	if (pSender_ && audio_play_flag != 1) {
-		printf("音声送信処理中\n");
+		printf("音声送信処理前: #1\n");
 		while (audio_play_flag > -1) {}
+		printf("音声送信処理前: #2\n");
 		audio_play_flag = 1;
-		thread(PlayAudioFileToVirtualMic, pSender_, audio_source_).detach();
+		thread(PlayAudioFileToVirtualMic, audio_sink_, pSender_).detach();
 	}
 }
 
@@ -88,7 +84,7 @@ void ZoomSDKVirtualAudioMicEvent::onMicUninitialized() {
 	pSender_ = nullptr;
 }
 
-ZoomSDKVirtualAudioMicEvent::ZoomSDKVirtualAudioMicEvent(std::string audio_source)
+ZoomSDKVirtualAudioMicEvent::ZoomSDKVirtualAudioMicEvent(GstElement* audio_sink)
 {
-	audio_source_ = audio_source;
+	audio_sink_ = audio_sink;
 }

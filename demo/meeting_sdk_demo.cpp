@@ -13,6 +13,8 @@
 #include <iostream>
 #include <map>
 #include <algorithm>
+#include <gst/gst.h>
+#include <gst/app/gstappsink.h>
 
 #include "zoom_sdk.h"
 #include "auth_service_interface.h"
@@ -63,6 +65,11 @@ std::string DEFAULT_AUDIO_SOURCE = "./sample.wav";
 
 //references for SendVideoRawData
 std::string DEFAULT_VIDEO_SOURCE = "./sample.mp4";
+
+// GStreamer関連の要素
+GstElement* pipeline;
+GstElement* video_sink;
+GstElement* audio_sink;
 
 
 GMainLoop* loop;
@@ -176,10 +183,49 @@ void CheckAndStartRawRecording(bool isVideo, bool isAudio) {
 	}
 }
 
+void GstreamerInit() {
+	// GStreamer の初期化
+	gst_init(nullptr, nullptr);
+
+	// 映像と音声を同時処理するための GStreamer パイプラインを定義
+	std::string pipeline_desc =
+			"uridecodebin name=dec uri=" + DEFAULT_VIDEO_SOURCE + " ! "
+			"queue ! videoconvert ! videoscale ! video/x-raw,format=I420,width=1280,height=720,framerate=30/1 ! appsink name=vidsink sync=true "
+			"dec. ! queue ! audioconvert ! audioresample ! audio/x-raw,format=S16LE,rate=44100,channels=1 ! appsink name=audsink sync=true";
+
+	// パイプラインを作成
+	GError* error = nullptr;
+	pipeline = gst_parse_launch(pipeline_desc.c_str(), &error);
+
+	// エラーチェック
+	if (!pipeline) {
+		std::cerr << "Failed to create GStreamer pipeline: " << error->message << std::endl;
+		g_error_free(error);
+		return;
+	}
+
+	// 映像と音声のデータを取得する appsink 要素を取得
+	video_sink = gst_bin_get_by_name(GST_BIN(pipeline), "vidsink");
+	audio_sink = gst_bin_get_by_name(GST_BIN(pipeline), "audsink");
+
+	// エラーチェック
+	if (!video_sink || !audio_sink) {
+		std::cerr << "Failed to get appsink elements" << std::endl;
+		gst_object_unref(pipeline);
+		return;
+	}
+
+	// パイプラインを再生状態に設定
+	gst_element_set_state(pipeline, GST_STATE_PLAYING);
+}
+
 //check if you meet the requirements to send raw data
 void CheckAndStartRawSending() {
+	// initGstreamer
+	GstreamerInit();
+
 	//SendVideoRawData
-	ZoomSDKVideoSource* virtual_camera_video_source = new ZoomSDKVideoSource(DEFAULT_VIDEO_SOURCE);
+	ZoomSDKVideoSource* virtual_camera_video_source = new ZoomSDKVideoSource(video_sink);
 	IZoomSDKVideoSourceHelper* p_videoSourceHelper = GetRawdataVideoSourceHelper();
 	if (p_videoSourceHelper) {
 		SDKError err = p_videoSourceHelper->setExternalVideoSource(virtual_camera_video_source);
@@ -195,7 +241,7 @@ void CheckAndStartRawSending() {
 	}
 
 	//SendAudioRawData
-	ZoomSDKVirtualAudioMicEvent* audio_source = new ZoomSDKVirtualAudioMicEvent(DEFAULT_AUDIO_SOURCE);
+	ZoomSDKVirtualAudioMicEvent* audio_source = new ZoomSDKVirtualAudioMicEvent(audio_sink);
 	IZoomSDKAudioRawDataHelper* audioHelper = GetAudioRawdataHelper();
 	if (audioHelper) {
 		SDKError err = audioHelper->setExternalAudioSource(audio_source);
@@ -634,6 +680,12 @@ void JoinMeeting()
 
 void LeaveMeeting()
 {
+    // パイプラインのクリーンアップ
+	gst_element_set_state(pipeline, GST_STATE_NULL);
+	gst_object_unref(video_sink);
+	gst_object_unref(audio_sink);
+	gst_object_unref(pipeline);
+
 	ZOOM_SDK_NAMESPACE::MeetingStatus status = ZOOM_SDK_NAMESPACE::MEETING_STATUS_FAILED;
 
 

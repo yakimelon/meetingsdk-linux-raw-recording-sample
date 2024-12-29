@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <cstdint>
+#include <gst/gst.h>
 #include "rawdata/rawdata_audio_helper_interface.h"
 #include "zoom_sdk.h"
 #include "zoom_sdk_raw_data_def.h"
@@ -16,7 +17,7 @@ class ZoomSDKVirtualAudioMicEvent :
 
 private:
 	IZoomSDKAudioRawDataSender* pSender_;
-	std::string audio_source_;
+	GstElement* audio_sink_;
 protected:
 
 	/// \brief Callback for virtual audio mic to do some initialization.
@@ -33,5 +34,5 @@ protected:
 	virtual void onMicUninitialized();
 
 public:
-	ZoomSDKVirtualAudioMicEvent(std::string audio_source);
+	ZoomSDKVirtualAudioMicEvent(GstElement* audio_sink);
 };
