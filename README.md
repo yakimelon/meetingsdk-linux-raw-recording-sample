@@ -4,7 +4,7 @@
   - docker compose up --build 
   - docker compose run app /bin/bash 
 - ビルド 
-  - cmake -DCMAKE_BUILD_TYPE=Debug -B build 
+  - cmake -DCMAKE_BUILD_TYPE=Debug -B build -DCMAKE_PREFIX_PATH="$(pkg-config --variable=prefix gstreamer-1.0)"
   - make
   - gdb ./bin/meetingSDKDemo
 - オーディオデバイスの初期化 
