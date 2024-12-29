@@ -49,10 +49,16 @@ RUN apt-get update --fix-missing
 
 RUN apt-get install gdb -y
 
-# TODO: Dockerだと apt install -y libopencv-dev のインストールで完了しなくなってしまうので、手動でインストールを行う
-# RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
-#    apt-get install -y libopencv-dev && \
-#    apt-get clean && rm -rf /var/lib/apt/lists/* \
+ENV TZ=Asia/Tokyo
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
+  apt-get install -y libopencv-dev && \
+  apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y \
+    libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev \
+    gstreamer1.0-tools
 
 # Set the working directory
 WORKDIR /app
