@@ -59,10 +59,10 @@ USING_ZOOM_SDK_NAMESPACE
 
 
 //references for SendAudioRawData
-std::string DEFAULT_AUDIO_SOURCE = "./yourwavefile.wav";
+std::string DEFAULT_AUDIO_SOURCE = "./sample.wav";
 
 //references for SendVideoRawData
-std::string DEFAULT_VIDEO_SOURCE = "./yourmp4file.mp4";
+std::string DEFAULT_VIDEO_SOURCE = "./sample.mp4";
 
 
 GMainLoop* loop;
@@ -641,7 +641,7 @@ void LeaveMeeting()
 		{
 
 			std::cout << "leave_meeting m_pMeetingService:Null" << std::endl;
-		
+
 		}
 		else
 		{
@@ -654,18 +654,18 @@ void LeaveMeeting()
 		{
 
 			std::cout << "LeaveMeeting() not in meeting " << std::endl;
-			
+
 		}
 
 		if (SDKError::SDKERR_SUCCESS == m_pMeetingService->Leave(ZOOM_SDK_NAMESPACE::LEAVE_MEETING))
 		{
 			std::cout << "LeaveMeeting() success " << std::endl;
-		
+
 		}
 		else
 		{
 			std::cout << "LeaveMeeting() error" << std::endl;
-			
+
 		}
 
 }
