@@ -58,7 +58,9 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 RUN apt-get update && apt-get install -y \
     libgstreamer1.0-dev \
     libgstreamer-plugins-base1.0-dev \
-    gstreamer1.0-tools
+    gstreamer1.0-tools \
+    gstreamer1.0-libav \
+    gstreamer1.0-plugins-bad
 
 # Set the working directory
 WORKDIR /app
