@@ -189,9 +189,13 @@ void GstreamerInit() {
 
 	// 映像と音声を同時処理するための GStreamer パイプラインを定義
 	std::string pipeline_desc =
-			"uridecodebin name=dec uri=" + DEFAULT_VIDEO_SOURCE + " ! "
-			"queue ! videoconvert ! videoscale ! video/x-raw,format=I420,width=1280,height=720,framerate=30/1 ! appsink name=vidsink sync=true "
-			"dec. ! queue ! audioconvert ! audioresample ! audio/x-raw,format=S16LE,rate=44100,channels=1 ! appsink name=audsink sync=true";
+			"filesrc location=/app/demo/bin/sample_reconverted.mp4 ! qtdemux name=demux "
+			"demux.video_0 ! queue ! avdec_h264 ! videoconvert ! videoscale ! "
+			"video/x-raw,format=I420,width=1920,height=1080,framerate=60/1 ! "
+			"appsink name=vidsink emit-signals=true sync=false "
+			"demux.audio_0 ! queue ! audioconvert ! audioresample ! "
+			"audio/x-raw,format=S16LE,rate=48000,channels=2 ! "
+			"appsink name=audsink emit-signals=true sync=false";
 
 	// パイプラインを作成
 	GError* error = nullptr;
