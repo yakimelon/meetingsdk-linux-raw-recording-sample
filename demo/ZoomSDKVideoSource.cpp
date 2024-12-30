@@ -27,35 +27,55 @@ void PlayVideoFileToVirtualCamera(GstElement* video_sink, IZoomSDKVideoSender* v
 		return;
 	}
 
+	std::cout << "Video frame buffer allocated successfully." << std::endl;
+
 	GstSample* video_sample = nullptr;
 
 	// 映像フレームのループ処理
 	while (video_play_flag > 0 && video_sender) {
 		// appsink から映像サンプルを取得
 		video_sample = gst_app_sink_try_pull_sample(GST_APP_SINK(video_sink), GST_SECOND / 30);
-		if (video_sample) {
-			// サンプルからバッファを取得
-			GstBuffer* video_buffer = gst_sample_get_buffer(video_sample);
-			GstMapInfo video_map;
-
-			// バッファをマップしてフレームデータを取得
-			if (gst_buffer_map(video_buffer, &video_map, GST_MAP_READ)) {
-				memcpy(frameBuffer, video_map.data, frameLen);
-
-				// Zoom SDK に映像フレームを送信
-				SDKError video_err = video_sender->sendVideoFrame(frameBuffer, width, height, frameLen, 0);
-				if (video_err != SDKERR_SUCCESS) {
-					std::cerr << "Failed to send video frame: " << video_err << std::endl;
-				}
-				gst_buffer_unmap(video_buffer, &video_map);
-			}
-
-			gst_sample_unref(video_sample);
+		if (!video_sample) {
+			std::cerr << "No video sample available. Retrying..." << std::endl;
+			std::this_thread::sleep_for(std::chrono::milliseconds(30)); // 短時間待機して再試行
+			continue;
 		}
+
+		// サンプルからバッファを取得
+		GstBuffer* video_buffer = gst_sample_get_buffer(video_sample);
+		GstMapInfo video_map;
+
+		// バッファをマップしてフレームデータを取得
+		if (!gst_buffer_map(video_buffer, &video_map, GST_MAP_READ)) {
+			std::cerr << "Failed to map video buffer." << std::endl;
+			gst_sample_unref(video_sample);
+			continue;
+		}
+
+		// デバッグ: バッファサイズの確認
+		std::cout << "Video buffer mapped. Size: " << video_map.size << std::endl;
+
+		memcpy(frameBuffer, video_map.data, frameLen);
+
+		// Zoom SDK に映像フレームを送信
+		SDKError video_err = video_sender->sendVideoFrame(frameBuffer, width, height, frameLen, 0);
+		if (video_err != SDKERR_SUCCESS) {
+			std::cerr << "Failed to send video frame: " << video_err << std::endl;
+		} else {
+			std::cout << "Video frame sent successfully." << std::endl;
+		}
+
+		gst_buffer_unmap(video_buffer, &video_map);
+		gst_sample_unref(video_sample);
+
+		// フレーム送信間隔を調整 (60fps)
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000 / 60));
 	}
 
 	// フレームバッファの解放
 	free(frameBuffer);
+	std::cout << "Video frame buffer freed." << std::endl;
+
 	video_play_flag = -1;
 }
 
