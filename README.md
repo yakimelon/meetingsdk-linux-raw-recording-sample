@@ -5,8 +5,11 @@
   - docker compose run app /bin/bash 
 - ビルド 
   - cmake -DCMAKE_BUILD_TYPE=Debug -B build -DCMAKE_PREFIX_PATH="$(pkg-config --variable=prefix gstreamer-1.0)"
-  - make
+  - cmake --build build
   - gdb ./bin/meetingSDKDemo
+- gdb
+  - (gdb) set environment GST_DEBUG *:3
+  - (gdb) run
 - オーディオデバイスの初期化 
   - sudo alsa force-reload 
   - pulseaudio --kill 
@@ -17,6 +20,7 @@
 - https://developers.zoom.us/docs/meeting-sdk/linux/add-features/raw-data/
 - https://devforum.zoom.us/t/meeting-sdk-sending-audio-raw-data/100571
 - ビデオ送信: https://devforum.zoom.us/t/syncing-send-video-and-send-audio-in-meeting-sdk/110080/2
+- SDK API リファレンス: https://marketplacefront.zoom.us/sdk/meeting/linux/class_i_zoom_s_d_k_audio_raw_data_sender.html
 
 ## JWTトークン生成
 
