@@ -10,6 +10,9 @@
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
 
+#include <vector>
+#include <fstream>
+
 using namespace std;
 
 int video_play_flag = -1;
@@ -31,13 +34,21 @@ void PlayVideoFileToVirtualCamera(GstElement* video_sink, IZoomSDKVideoSender* v
 
 	GstSample* video_sample = nullptr;
 
+	// ローカルファイルに保存するためのバッファ
+	const int fps = 60;
+	const int seconds_to_record = 5;
+	const int total_frames_to_record = fps * seconds_to_record;
+	std::vector<char> recordingBuffer(frameLen * total_frames_to_record);
+
+	int frame_count = 0;
+
 	// 映像フレームのループ処理
 	while (video_play_flag > 0 && video_sender) {
 		// appsink から映像サンプルを取得
-		video_sample = gst_app_sink_try_pull_sample(GST_APP_SINK(video_sink), GST_SECOND / 30);
+		video_sample = gst_app_sink_try_pull_sample(GST_APP_SINK(video_sink), GST_SECOND / fps);
 		if (!video_sample) {
 			std::cerr << "No video sample available. Retrying..." << std::endl;
-			std::this_thread::sleep_for(std::chrono::milliseconds(30)); // 短時間待機して再試行
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000 / fps)); // 短時間待機して再試行
 			continue;
 		}
 
@@ -69,7 +80,7 @@ void PlayVideoFileToVirtualCamera(GstElement* video_sink, IZoomSDKVideoSender* v
 		gst_sample_unref(video_sample);
 
 		// フレーム送信間隔を調整 (60fps)
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000 / 60));
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000 / fps));
 	}
 
 	// フレームバッファの解放
