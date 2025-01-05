@@ -192,10 +192,10 @@ void GstreamerInit() {
 			"uridecodebin name=dec uri=file:///app/demo/bin/sample_converted.mp4 ! "
 			"queue ! videoconvert ! videoscale ! "
 			"video/x-raw,format=I420,width=640,height=480,framerate=60/1 ! "
-			"appsink name=vidsink emit-signals=true sync=false "
+			"appsink name=vidsink emit-signals=true sync=true "
 			"dec. ! queue ! audioconvert ! audioresample ! "
-			"audio/x-raw,format=S16LE,rate=44100,channels=2 ! "
-			"appsink name=audsink emit-signals=true sync=false";
+			"audio/x-raw,format=S16LE,rate=44100,channels=1 ! "
+			"appsink name=audsink emit-signals=true sync=true";
 
 	// パイプラインを作成
 	GError* error = nullptr;
