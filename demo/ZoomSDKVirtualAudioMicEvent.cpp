@@ -28,6 +28,8 @@ void PlayAudioFileToVirtualMic(GstElement* audio_sink, IZoomSDKAudioRawDataSende
 
 	const int target_interval_ms = 10; // 10ms間隔で送信
 	while (audio_play_flag > 0 && audio_sender) {
+		std::cout << "==== 送信処理 ====" << std::endl;
+
 		auto start_time = std::chrono::high_resolution_clock::now(); // 処理開始時刻を記録
 
 		// appsink から音声サンプルを取得
