@@ -63,17 +63,12 @@ void PlayVideoFileToVirtualCamera(GstElement* video_sink, IZoomSDKVideoSender* v
 			continue;
 		}
 
-		// デバッグ: バッファサイズの確認
-		std::cout << "Video buffer mapped. Size: " << video_map.size << std::endl;
-
 		memcpy(frameBuffer, video_map.data, frameLen);
 
 		// Zoom SDK に映像フレームを送信
 		SDKError video_err = video_sender->sendVideoFrame(frameBuffer, width, height, frameLen, 0);
 		if (video_err != SDKERR_SUCCESS) {
 			std::cerr << "Failed to send video frame: " << video_err << std::endl;
-		} else {
-			std::cout << "Video frame sent successfully." << std::endl;
 		}
 
 		gst_buffer_unmap(video_buffer, &video_map);
