@@ -17,6 +17,7 @@
 
 ## 参考URL
 
+- https://github.com/zoom/meetingsdk-linux-raw-recording-sample
 - https://developers.zoom.us/docs/meeting-sdk/linux/add-features/raw-data/
 - https://devforum.zoom.us/t/meeting-sdk-sending-audio-raw-data/100571
 - ビデオ送信: https://devforum.zoom.us/t/syncing-send-video-and-send-audio-in-meeting-sdk/110080/2
