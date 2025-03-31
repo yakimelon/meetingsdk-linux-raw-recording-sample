@@ -7,6 +7,7 @@ services:
       - ./demo:/app/demo
       - /mnt/wslg:/mnt/wslg  # PulseAudioソケットの共有
     environment:
+      - TZ=Asia/Tokyo
       - PULSE_SERVER=unix:/mnt/wslg/PulseServer  # PulseAudioサーバー指定
       - XDG_RUNTIME_DIR=/run/user/1000           # ランタイムディレクトリ
       - USER_UID=1000  # ホストユーザーUID

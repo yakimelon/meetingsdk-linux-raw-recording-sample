@@ -84,6 +84,11 @@ RUN mkdir -p /run/user/1000 && chmod 700 /run/user/1000
 ARG USER_UID=1000
 ARG USER_GID=1000
 
+RUN apt-get update && \
+    apt-get install -y curl cron && \
+    curl -fsSL https://deb.nodesource.com/setup_21.x | bash - && \
+    apt-get install -y nodejs
+
 # Create user and runtime directory
 RUN groupadd -g ${USER_GID} pulseuser && \
     useradd -m -u ${USER_UID} -g ${USER_GID} -s /bin/bash pulseuser && \
@@ -91,9 +96,17 @@ RUN groupadd -g ${USER_GID} pulseuser && \
     chown ${USER_UID}:${USER_GID} /run/user/${USER_UID} && \
     chmod 700 /run/user/${USER_UID}
 
-
 ENV XDG_RUNTIME_DIR=/run/user/1000
 USER pulseuser
+
+# Install Node modules
+WORKDIR /app/demo/batch
+RUN npm install
+
+# Set up cron job (meeting.cron は volume マウント済み前提)
+# TODO: cronは一旦コメントアウト
+# RUN chmod 0644 /app/demo/batch/meeting.cron && crontab /app/demo/batch/meeting.cron
+# CMD ["cron", "-f"]
 
 # Set the working directory to the binary folder
 WORKDIR /app/demo/bin
