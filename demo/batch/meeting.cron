@@ -1,0 +1,1 @@
+*/5 * * * * cd /app/demo/batch && /usr/bin/node /app/demo/batch/startMeetings.js >> /app/demo/batch/log.txt 2>&1
