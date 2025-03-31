@@ -326,6 +326,8 @@ void onInMeeting() {
 	CheckAndStartRawRecording(GetVideoRawData, GetAudioRawData);
 	CheckAndStartRawSending();
 
+	// 映像/音声を送信する
+	turnOnSendVideoAndAudio();
 }
 
 //on meeting ended, typically by host, do something here. it is possible to reuse this SDK instance
@@ -335,7 +337,6 @@ void onMeetingEndsQuitApp() {
 }
 
 void onMeetingJoined() {
-
 	printf("Joining Meeting...\n");
 }
 
@@ -907,7 +908,6 @@ gboolean stdin_callback(GIOChannel *source, GIOCondition condition, gpointer dat
 }
 
 void SdkSetup() {
-	ReadTEXTSettings();
 	InitMeetingSDK();
 	AuthMeetingSDK();
 	initAppSettings();
@@ -915,6 +915,20 @@ void SdkSetup() {
 
 int main(int argc, char* argv[])
 {
+	// コマンドライン引数処理（最低3つ必須：meeting_number, zak, token）
+    if (argc >= 4) {
+        meeting_number = argv[1];
+        zak = argv[2];
+        token = argv[3];
+        std::cout << "[CLI引数] meeting_number: " << meeting_number << std::endl;
+        std::cout << "[CLI引数] zak: " << zak << std::endl;
+        std::cout << "[CLI引数] token: " << token << std::endl;
+    } else {
+        std::cout << "[警告] meeting_number / zak / token がコマンドライン引数に指定されていません。" << std::endl;
+        std::cout << "config.txt を読み込みます。" << std::endl;
+        ReadTEXTSettings();  // ← Fallback で読み込む
+    }
+
 	SdkSetup();
 
 	loop = g_main_loop_new(NULL, FALSE);
