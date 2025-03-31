@@ -68,6 +68,9 @@ std::string DEFAULT_AUDIO_SOURCE = "./sample.wav";
 //references for SendVideoRawData
 std::string DEFAULT_VIDEO_SOURCE = "./sample.mp4";
 
+// 再生する動画のパス
+std::string movie_path = "/app/demo/bin/sample_converted.mp4";
+
 // GStreamer関連の要素
 GstElement* pipeline;
 GstElement* video_sink;
@@ -191,7 +194,7 @@ void GstreamerInit() {
 
 	// 映像と音声を同時処理するための GStreamer パイプラインを定義
 	std::string pipeline_desc =
-			"uridecodebin name=dec uri=file:///app/demo/bin/sample_converted.mp4 ! "
+			"uridecodebin name=dec uri=file://" + movie_path + " ! "
 			"queue ! videoconvert ! videoscale ! "
 			"video/x-raw,format=I420,width=640,height=480,framerate=60/1 ! "
 			"appsink name=vidsink emit-signals=true sync=true "
@@ -916,15 +919,17 @@ void SdkSetup() {
 int main(int argc, char* argv[])
 {
 	// コマンドライン引数処理（最低3つ必須：meeting_number, zak, token）
-    if (argc >= 4) {
+    if (argc >= 5) {
         meeting_number = argv[1];
         zak = argv[2];
         token = argv[3];
+		movie_path = argv[4];
         std::cout << "[CLI引数] meeting_number: " << meeting_number << std::endl;
         std::cout << "[CLI引数] zak: " << zak << std::endl;
         std::cout << "[CLI引数] token: " << token << std::endl;
+		std::cout << "[CLI引数] movie_path: " << movie_path << std::endl;
     } else {
-        std::cout << "[警告] meeting_number / zak / token がコマンドライン引数に指定されていません。" << std::endl;
+        std::cout << "[警告] meeting_number / zak / token / movie_path がコマンドライン引数に指定されていません。" << std::endl;
         std::cout << "config.txt を読み込みます。" << std::endl;
         ReadTEXTSettings();  // ← Fallback で読み込む
     }
