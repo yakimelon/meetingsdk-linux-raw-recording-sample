@@ -35,6 +35,8 @@
 //used for connection helper
 #include "NetworkConnectionHandler.h"
 
+#include "WaitingRoomEventListener.h"
+
 //used for event listener
 #include "MeetingParticipantsCtrlEventListener.h"
 //#include "MeetingRecordingCtrlEventListener.h"
@@ -76,7 +78,7 @@ GMainLoop* loop;
 
 
 //These are needed to readsettingsfromTEXT named config.txt
-std::string meeting_number, token, meeting_password, recording_token;
+std::string meeting_number, token, zak, meeting_password, recording_token;
 
 
 //Services which are needed to initialize, authenticate and configure settings for the SDK
@@ -317,7 +319,7 @@ void onInMeeting() {
 
 		//print all list of participants
 		IList<unsigned int>* participants = m_pMeetingService->GetMeetingParticipantsController()->GetParticipantsList();
-		printf("Participants count: %d\n", participants->GetCount());
+//		printf("Participants count: %d\n", participants->GetCount());
 	}
 
 	//first attempt to start raw recording  / sending, upon successfully joined and achieved "in-meeting" state.
@@ -410,8 +412,12 @@ void ReadTEXTSettings()
 		std::cout << "Meeting Number: " << config["meeting_number"] << std::endl;
 	}
 	if (config.find("token") != config.end()) {
-		 token=config["token"];
-		 	std::cout << "Token: " << token<< std::endl;
+		token=config["token"];
+		std::cout << "Token: " << token<< std::endl;
+	}
+	if (config.find("zak") != config.end()) {
+		zak=config["zak"];
+		std::cout << "Zak: " << zak << std::endl;
 	}
 	if (config.find("meeting_password") != config.end()) {
 		
@@ -585,7 +591,13 @@ void JoinMeeting()
 
 	// Set the event listener for host, co-host 
 	m_pParticipantsController = m_pMeetingService->GetMeetingParticipantsController();
-	m_pParticipantsController->SetEvent(new MeetingParticipantsCtrlEventListener(&onIsHost, &onIsCoHost));
+	m_pParticipantsController->SetEvent(new MeetingParticipantsCtrlEventListener(&onIsHost, &onIsCoHost, m_pMeetingService));
+
+	// ミーティング待機してるユーザーを検知する
+	IMeetingWaitingRoomController* waitingRoomCtrl = m_pMeetingService->GetMeetingWaitingRoomController();
+	if (waitingRoomCtrl) {
+		waitingRoomCtrl->SetEvent(new WaitingRoomEventListener(m_pMeetingService));
+	}
 
 	// Set the event listener for recording privilege status
 	m_pRecordController = m_pMeetingService->GetMeetingRecordingController();
@@ -602,6 +614,7 @@ void JoinMeeting()
 	ZOOM_SDK_NAMESPACE::SDKError err(ZOOM_SDK_NAMESPACE::SDKERR_SERVICE_FAILED);
 	joinParam.userType = ZOOM_SDK_NAMESPACE::SDK_UT_WITHOUT_LOGIN;
 	ZOOM_SDK_NAMESPACE::JoinParam4WithoutLogin& withoutloginParam = joinParam.param.withoutloginuserJoin;
+	withoutloginParam.userZAK = zak.c_str();
 	// withoutloginParam.meetingNumber = 1231231234;
 	withoutloginParam.meetingNumber = std::stoull(meeting_number);
 	withoutloginParam.vanityID = NULL;

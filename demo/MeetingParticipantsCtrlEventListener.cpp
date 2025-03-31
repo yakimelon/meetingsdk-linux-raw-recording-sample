@@ -1,20 +1,40 @@
 #include "MeetingParticipantsCtrlEventListener.h"
+#include <meeting_service_components/meeting_waiting_room_interface.h>
+#include <iostream>
 
 using namespace std;
 
 
 
-MeetingParticipantsCtrlEventListener::MeetingParticipantsCtrlEventListener(void(*onIsHost)(), void(*onIsCoHost)())
+MeetingParticipantsCtrlEventListener::MeetingParticipantsCtrlEventListener(void(*onIsHost)(), void(*onIsCoHost)(), IMeetingService* meetingService)
 
 {
 	onIsHost_ = onIsHost;
 	onIsCoHost_ = onIsCoHost;
+	m_pMeetingService_ = meetingService;
 }
 
 /// \brief Callback event of notification of users who are in the meeting.
 	/// \param lstUserID List of the user ID. 
 	/// \param strUserList List of user in json format. This function is currently invalid, hereby only for reservations.
-void MeetingParticipantsCtrlEventListener::onUserJoin(IList<unsigned int >* lstUserID, const zchar_t* strUserList ){ }
+void MeetingParticipantsCtrlEventListener::onUserJoin(IList<unsigned int >* lstUserID, const zchar_t* strUserList) {
+    std::cout << "[参加者検出] onUserJoin 呼び出し" << std::endl;
+
+    if (!lstUserID || !m_pMeetingService_) return;
+
+    IMeetingWaitingRoomController* waitingRoomCtrl = m_pMeetingService_->GetMeetingWaitingRoomController();
+    if (!waitingRoomCtrl) {
+        std::cout << "WaitingRoomController が取得できませんでした" << std::endl;
+        return;
+    }
+
+    for (int i = 0; i < lstUserID->GetCount(); ++i) {
+        unsigned int uid = lstUserID->GetItem(i);
+        std::cout << "許可中のUserID: " << uid << std::endl;
+        waitingRoomCtrl->AdmitToMeeting(uid);
+    }
+}
+
 
 /// \brief Callback event of notification of user who leaves the meeting.
 /// \param lstUserID List of the user ID who leaves the meeting.

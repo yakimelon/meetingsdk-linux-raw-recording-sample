@@ -57,6 +57,7 @@ add_executable(meetingSDKDemo
         ${CMAKE_SOURCE_DIR}/ZoomSDKVideoSource.cpp
         ${CMAKE_SOURCE_DIR}/ZoomSDKVirtualAudioMicEvent.h
         ${CMAKE_SOURCE_DIR}/ZoomSDKVirtualAudioMicEvent.cpp
+        ${CMAKE_SOURCE_DIR}/WaitingRoomEventListener.h
 )
 
 # Link all libraries

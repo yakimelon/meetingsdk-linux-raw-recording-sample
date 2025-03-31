@@ -11,9 +11,10 @@ class MeetingParticipantsCtrlEventListener :
 	void (*onIsHost_)();
 	void (*onIsCoHost_)();
 
-public:
-	MeetingParticipantsCtrlEventListener(void (*onIsHost_)(), void (*onIsCoHost_)());
+	IMeetingService* m_pMeetingService_;
 
+public:
+	MeetingParticipantsCtrlEventListener(void (*onIsHost_)(), void (*onIsCoHost_)(), IMeetingService* meetingService);
 
 	/// \brief Callback event of notification of users who are in the meeting.
 /// \param lstUserID List of user IDs. 
