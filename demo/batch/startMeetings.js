@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const https = require('https');
 const { v4: uuidv4 } = require('uuid');
-const fetch = require('node-fetch');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 // 環境変数
 const APP_KEY = process.env.APP_KEY;
@@ -35,24 +35,33 @@ function fetchMockMeetings() {
 }
 
 async function fetchMeetingsFromAPI() {
-  const url = 'https://kagebunshin.itreat-test.com/api/upcoming-webinars';
-  try {
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error(`APIリクエスト失敗: ${res.status} ${res.statusText}`);
+    const url = 'https://kagebunshin.itreat-test.com/api/upcoming-webinars';
+  
+    // Basic認証用ヘッダー生成
+    const authHeader = 'Basic ' + Buffer.from(`${process.env.API_USER}:${process.env.API_PASS}`).toString('base64');
+  
+    try {
+      const res = await fetch(url, {
+        headers: {
+          'Authorization': authHeader
+        }
+      });
+  
+      if (!res.ok) {
+        throw new Error(`APIリクエスト失敗: ${res.status} ${res.statusText}`);
+      }
+  
+      const data = await res.json();
+  
+      console.log('📡 取得したAPIレスポンス:');
+      console.log(JSON.stringify(data, null, 2));
+  
+      return data;
+    } catch (err) {
+      console.error('❌ APIからの取得に失敗しました:', err.message);
+      return { meetings: [] }; // エラー時は空配列を返す
     }
-    const data = await res.json();
-
-    console.log('📡 取得したAPIレスポンス:');
-    console.log(JSON.stringify(data, null, 2));
-
-    return data;
-  } catch (err) {
-    console.error('❌ APIからの取得に失敗しました:', err.message);
-    return { meetings: [] }; // エラー時は空配列を返す
   }
-}
-
 
 // JWT生成
 function generateToken(appKey, secret) {
