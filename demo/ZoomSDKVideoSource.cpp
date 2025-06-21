@@ -47,7 +47,7 @@ void PlayVideoFileToVirtualCamera(GstElement* video_sink, IZoomSDKVideoSender* v
 		// appsink から映像サンプルを取得
 		video_sample = gst_app_sink_try_pull_sample(GST_APP_SINK(video_sink), GST_SECOND / fps);
 		if (!video_sample) {
-			std::cerr << "No video sample available. Retrying..." << std::endl;
+			// std::cerr << "No video sample available. Retrying..." << std::endl;
 			std::this_thread::sleep_for(std::chrono::milliseconds(1000 / fps)); // 短時間待機して再試行
 			continue;
 		}

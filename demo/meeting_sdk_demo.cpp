@@ -923,7 +923,7 @@ int main(int argc, char* argv[])
         meeting_number = argv[1];
         zak = argv[2];
         token = argv[3];
-		movie_path = argv[4];
+		// movie_path = argv[4];
         std::cout << "[CLI引数] meeting_number: " << meeting_number << std::endl;
         std::cout << "[CLI引数] zak: " << zak << std::endl;
         std::cout << "[CLI引数] token: " << token << std::endl;
